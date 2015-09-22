@@ -37,11 +37,11 @@ module Surveygizmo
     end
 
     def add_contact_to_list(list_id, contact_params)
-      parsed_response(post_request("contactlist/#{list_id}?_method=POST&#{contact_params}"))
+      parsed_response(post_request("/contactlist/#{list_id}?_method=POST#{contact_params}"))
     end
 
     def add_contact_to_campaign(survey_id, campaign_id, contact_params)
-      parsed_response(put_request("survey/#{survey_id}/surveycampaign/#{campaign_id}/contact/?_method=PUT&#{contact_params}"))
+      parsed_response(put_request("/survey/#{survey_id}/surveycampaign/#{campaign_id}/contact/?_method=PUT&#{contact_params}"))
     end
 
     def update_campaign_contact(survey_id, campaign_id, contact_id, contact_params)
@@ -67,7 +67,7 @@ module Surveygizmo
     end
 
     def post_request(endpoint, headers = {})
-      @access_token.post(endpoint, headers)
+      @access_token.get(endpoint, headers)
     end
 
     def create_consumer(consumer_data)
