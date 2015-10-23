@@ -3,7 +3,7 @@ require "oauth"
 
 module Surveygizmo
   class Client
-    API_URL = "http://restapi.surveygizmo.com/v4"
+    API_URL = "http://restapi.surveygizmo.com/v3"
 
     def initialize(omniauth_data)
       access_token_data = omniauth_data['access_token']
@@ -21,18 +21,18 @@ module Surveygizmo
     end
 
     def contactlist(page = 1, page_size = 50, filters = [])
-      get_paginated_resource("contactlist", page, page_size, filters)
+      get_paginated_resource("contactlist", filters, page, page_size, filters)
     end
 
     def contactlist_contact(page = 1, page_size = 50, filters = [], list_id)
-      get_paginated_resource("contactlist/#{list_id}", page, page_size)
+      get_paginated_resource("contactlist/#{list_id}", filters, page, page_size)
     end
 
     def survey(filters = [], page = 1, page_size = 50)
       get_paginated_resource("survey", filters, page, page_size)
     end
 
-    def surveycampaign(page = 1,filters = [], page_size = 50, survey_id)
+    def surveycampaign(filters = [], page = 1, page_size = 50, survey_id)
       get_paginated_resource(
         "survey/#{survey_id}/surveycampaign",
         filters,
@@ -41,16 +41,10 @@ module Surveygizmo
       )
     end
 
-    def surveycampaign_contact(
-      page = 1,
-      filters = [],
-      page_size = 50,
-      survey_id,
-      campaign_id
-    )
-
+    def surveycampaign_contact(filters = [], page = 1, page_size = 50, survey_id, campaign_id)
       get_paginated_resource(
         "survey/#{survey_id}/surveycampaign/#{campaign_id}/contact",
+        filters,
         page,
         page_size
       )
@@ -68,7 +62,7 @@ module Surveygizmo
       parsed_response(
         put_request(
           "/survey/#{survey_id}/surveycampaign/"\
-          "#{campaign_id}/contact/?_method=PUT&#{contact_params}"
+          "#{campaign_id}/contact/?_method=PUT#{contact_params}"
         )
       )
     end
@@ -80,10 +74,10 @@ module Surveygizmo
       contact_params
     )
       parsed_response(
-        post_request(
+        get_request(
           "survey/#{survey_id}/surveycampaign/"\
           "#{campaign_id}/contact/#{contact_id}?_method=POST"\
-          "&#{contact_params}"
+          "#{contact_params}"
         )
       )
     end
@@ -111,17 +105,21 @@ module Surveygizmo
     end
 
     def post_request(endpoint, headers = {})
-      @access_token.get(endpoint, headers)
+      @access_token.post(endpoint, headers)
     end
 
     def compose_filter(filters)
       usable_filters = filters.select do |f|
         f.size == 3
       end
-      usable_filters.each_with_object("").with_index do |(f, memo), index|
-        memo << "&filter[field][#{index}]=#{f['field']}"\
-                "&filter[operator][#{index}]=#{f['operator']}"\
-                "&filter[value][#{index}]=#{f['value']}"
+      if usable_filters.any?
+        usable_filters.each_with_object("").with_index do |(f, memo), index|
+          memo << "&filter[field][#{index}]=#{f[:field]}"\
+                  "&filter[operator][#{index}]=#{f[:operator]}"\
+                  "&filter[value][#{index}]=#{f[:value]}"
+        end
+      else
+        ""
       end
     end
 
